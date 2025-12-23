@@ -1,0 +1,52 @@
+/* style.css - 共通デザイン・アニメーション定義 */
+
+/* フォントの読み込み（Google Fonts） */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* 全体の基本設定 */
+body {
+    font-family: 'Inter', sans-serif;
+    /* 背景色をここで決めることも可能ですが、今回はTailwindクラス(bg-slate-50)を優先します */
+}
+
+/* スクロールバーのカスタマイズ（Chrome/Safari/Edge用） */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1; /* slate-300 */
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; /* slate-400 */
+}
+
+/* 共通パーツ：クリックできるタグ */
+.clickable-tag {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* アニメーション定義 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* アニメーションクラス */
+.animate-fade-in {
+    animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0; /* 初期状態は非表示 */
+}
