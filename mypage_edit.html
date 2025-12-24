@@ -6,6 +6,7 @@
     <title>自分のカードを編集</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="theme.js"></script>
+    <script src="data.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-secondary-50 min-h-screen pb-20">
@@ -15,9 +16,10 @@
             <h1 class="font-bold text-xl tracking-widest" style="font-family: 'Zen Maru Gothic'">MY CARD EDIT</h1>
         </div>
         <div class="flex items-center gap-4">
-            <a href="dashboard.html" class="px-4 py-2 bg-white text-secondary-800 rounded font-bold hover:bg-secondary-100 transition shadow-sm text-sm">
-                保存して戻る
-            </a>
+            <button onclick="confirmBack()" class="px-4 py-2 bg-transparent border border-white/30 text-white rounded font-bold hover:bg-white/10 transition shadow-sm text-sm flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                戻る
+            </button>
         </div>
     </header>
 
@@ -27,7 +29,7 @@
             <div class="sticky top-24">
                 <div class="flex items-center gap-2 mb-4">
                     <span class="text-2xl">👀</span>
-                    <h2 class="font-bold text-secondary-700">カードの見た目（プレビュー）</h2>
+                    <h2 class="font-bold text-secondary-700">自己紹介カード（プレビュー）</h2>
                 </div>
                 
                 <div class="bg-white p-6 shadow-floating transform rotate-1 relative border-t-8 border-primary-400 rounded-sm">
@@ -37,29 +39,41 @@
                             <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=MyIcon" class="w-16 h-16 rounded bg-secondary-50 border border-secondary-200 shadow-sm">
                             <div>
                                 <h3 class="font-bold text-secondary-800 text-2xl" id="preview-name">山田 太郎</h3>
-                                <p class="text-sm text-secondary-500 font-bold mt-1 border-b border-secondary-200 inline-block" id="preview-dept">開発部</p>
+                                <p class="text-sm text-secondary-500 font-bold mt-1 border-b border-secondary-200 inline-block" id="preview-dept">BI事業部</p>
                             </div>
                         </div>
                     </div>
                     <div class="space-y-4">
                         <div>
-                            <p class="text-[10px] text-secondary-400 font-bold mb-1">スキル</p>
-                            <div class="flex flex-wrap gap-1" id="preview-skills">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary-50 text-primary-700 border border-primary-100">Python</span>
-                            </div>
+                            <p class="text-[10px] text-secondary-400 font-bold mb-1">SKILLS</p>
+                            <div class="flex flex-wrap gap-1" id="preview-skills"></div>
+                        </div>
+                        <div id="preview-certs-container" class="hidden">
+                             <p class="text-[10px] text-secondary-400 font-bold mb-1">LICENSE</p>
+                             <div class="flex flex-wrap gap-1" id="preview-certs"></div>
                         </div>
                         <div class="bg-secondary-50/50 p-3 rounded border-l-4 border-secondary-300">
                             <p class="text-sm text-secondary-600 font-medium italic" id="preview-comment">"ここにひとことが入ります"</p>
+                        </div>
+                        <div class="pt-3 border-t border-dashed border-secondary-200 space-y-3">
+                            <div>
+                                <span class="text-[10px] bg-primary-100 text-primary-700 px-2 py-0.5 rounded font-bold">Q. 仕事の流儀</span>
+                                <p class="text-xs text-secondary-700 font-medium mt-1 pl-1 border-l-2 border-primary-200" id="preview-q1">...</p>
+                            </div>
+                            <div>
+                                <span class="text-[10px] bg-accent-100 text-accent-800 px-2 py-0.5 rounded font-bold">Q. 最近のマイブーム</span>
+                                <p class="text-xs text-secondary-700 font-medium mt-1 pl-1 border-l-2 border-accent-200" id="preview-q2">...</p>
+                            </div>
+                            <div>
+                                <span class="text-[10px] bg-success-100 text-success-700 px-2 py-0.5 rounded font-bold">Q. 実は私...</span>
+                                <p class="text-xs text-secondary-700 font-medium mt-1 pl-1 border-l-2 border-success-200" id="preview-q3">...</p>
+                            </div>
                         </div>
                         <div class="flex justify-between items-center pt-2 border-t border-dotted border-secondary-200">
                              <span class="text-xs text-secondary-400 font-bold uppercase tracking-wider" id="preview-role">2020年入社</span>
                         </div>
                     </div>
                 </div>
-                
-                <p class="text-xs text-secondary-400 mt-4 text-center">
-                    ※ リアルタイムで反映されます
-                </p>
             </div>
         </aside>
 
@@ -69,7 +83,7 @@
                     <span>✏️</span> 情報を入力
                 </h2>
 
-                <form class="space-y-8">
+                <form class="space-y-8" onsubmit="return false;" id="edit-form">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-bold text-secondary-600 mb-2">名前</label>
@@ -84,13 +98,13 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-bold text-secondary-600 mb-2">部署</label>
-                            <select class="w-full border-2 border-secondary-200 rounded p-3 focus:border-primary-500 outline-none transition cursor-pointer" onchange="updatePreview('dept', this.value)">
-                                <option>開発部</option><option>営業部</option><option>人事部</option>
-                            </select>
+                            <select id="input-dept" class="w-full border-2 border-secondary-200 rounded p-3 focus:border-primary-500 outline-none transition cursor-pointer" onchange="updatePreview('dept', this.value)">
+                                </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-secondary-600 mb-2">入社年度・役職</label>
-                            <input type="text" value="2020年入社" class="w-full border-2 border-secondary-200 rounded p-3 focus:border-primary-500 outline-none transition" oninput="updatePreview('role', this.value)">
+                            <label class="block text-sm font-bold text-secondary-600 mb-2">入社年度</label>
+                            <select id="input-year" class="w-full border-2 border-secondary-200 rounded p-3 focus:border-primary-500 outline-none transition cursor-pointer" onchange="updatePreview('role', this.value + '入社')">
+                                </select>
                         </div>
                     </div>
 
@@ -100,21 +114,54 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-bold text-secondary-600 mb-2">得意なスキル (カンマ区切り)</label>
-                        <input type="text" value="Python, JavaScript, デザイン" class="w-full border-2 border-secondary-200 rounded p-3 focus:border-primary-500 outline-none transition mb-2" oninput="updatePreviewSkills(this.value)">
-                        <p class="text-xs text-secondary-400">例: Excel, 英語, リーダーシップ</p>
+                        <label class="block text-sm font-bold text-secondary-600 mb-2">得意なスキル</label>
+                        <div id="selected-skills-container" class="flex flex-wrap gap-2 mb-2 min-h-[30px]"></div>
+                        
+                        <div class="relative">
+                            <input type="text" id="skill-search" placeholder="クリックして一覧を表示、または入力して検索..." class="w-full border-2 border-secondary-200 rounded p-3 focus:border-primary-500 outline-none transition cursor-pointer">
+                            <ul id="skill-results" class="hidden absolute z-10 w-full bg-white border-2 border-secondary-200 rounded mt-1 max-h-60 overflow-y-auto shadow-lg">
+                                </ul>
+                        </div>
+                        <p class="text-xs text-secondary-400 mt-1">※クリックすると全リストが表示されます</p>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-bold text-secondary-600 mb-2">自己紹介・プロフィール詳細</label>
-                        <textarea rows="6" class="w-full border-2 border-secondary-200 rounded p-3 focus:border-primary-500 outline-none transition resize-none leading-relaxed" placeholder="これまでの経歴や、趣味、休日の過ごし方などを自由に書いてください。">大学卒業後、SIerにて基幹システムの開発に従事。
-現在はWebフロントエンド技術を中心に学習しており、使いやすいUIデザインに興味があります。
-休日はカフェ巡りやキャンプをしています。</textarea>
+                        <label class="block text-sm font-bold text-secondary-600 mb-2">保有資格 (奨励資格リスト)</label>
+                        <div id="selected-certs-container" class="flex flex-wrap gap-2 mb-2 min-h-[30px]"></div>
+                        
+                        <div class="relative">
+                            <input type="text" id="cert-search" placeholder="クリックして一覧を表示、または入力して検索..." class="w-full border-2 border-secondary-200 rounded p-3 focus:border-primary-500 outline-none transition cursor-pointer">
+                            <ul id="cert-results" class="hidden absolute z-10 w-full bg-white border-2 border-secondary-200 rounded mt-1 max-h-60 overflow-y-auto shadow-lg">
+                                </ul>
+                        </div>
+                         <p class="text-xs text-secondary-400 mt-1">※クリックすると全リストが表示されます</p>
+                    </div>
+
+                    <div class="bg-secondary-50 p-6 rounded border-2 border-dashed border-secondary-200 space-y-6">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-xl">🎤</span>
+                            <h3 class="font-bold text-secondary-700">3つの質問で自己紹介</h3>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-primary-700 mb-2">Q1. 仕事で大切にしていること（流儀）</label>
+                            <input type="text" class="w-full border-2 border-secondary-200 rounded p-3 focus:border-primary-500 outline-none transition" 
+                                placeholder="例：スピード感、相手の立場に立つ..." value="ユーザー視点での開発を心がけています。" oninput="updatePreview('q1', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-accent-700 mb-2">Q2. 最近のマイブーム・ハマっていること</label>
+                            <input type="text" class="w-full border-2 border-secondary-200 rounded p-3 focus:border-accent-500 outline-none transition" 
+                                placeholder="例：サウナ、韓国ドラマ、キャンプ..." value="週末のキャンプと焚き火動画を見ること。" oninput="updatePreview('q2', this.value)">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-success-700 mb-2">Q3. 実は私...（意外な一面や特技）</label>
+                            <input type="text" class="w-full border-2 border-secondary-200 rounded p-3 focus:border-success-500 outline-none transition" 
+                                placeholder="例：昔バンドやってました、実は甘党です..." value="学生時代は美術部で油絵を描いていました。" oninput="updatePreview('q3', this.value)">
+                        </div>
                     </div>
 
                     <div class="pt-6 border-t border-secondary-100 flex justify-end gap-4">
-                        <button type="button" class="px-6 py-3 rounded text-secondary-500 font-bold hover:bg-secondary-50 transition">キャンセル</button>
-                        <button type="button" class="px-8 py-3 bg-primary-600 text-white rounded font-bold shadow hover:bg-primary-700 hover:shadow-lg transition transform hover:-translate-y-0.5" onclick="location.href='dashboard.html'">
+                        <button type="button" onclick="confirmBack()" class="px-6 py-3 rounded text-secondary-500 font-bold hover:bg-secondary-50 transition">キャンセル</button>
+                        <button type="button" class="px-8 py-3 bg-primary-600 text-white rounded font-bold shadow hover:bg-primary-700 hover:shadow-lg transition transform hover:-translate-y-0.5" onclick="saveAndExit()">
                             保存する
                         </button>
                     </div>
@@ -124,26 +171,209 @@
     </div>
 
     <script>
-        function updatePreview(id, value) {
-            document.getElementById('preview-' + id).innerText = value;
+        let mySkills = ["Python", "JavaScript", "デザイン"]; 
+        let myCerts = []; 
+        let isDirty = false;
+
+        function markAsDirty() { isDirty = true; }
+
+        function confirmBack() {
+            if (isDirty) {
+                if (confirm("変更内容は保存されていません。\n保存せずに前の画面に戻りますか？")) {
+                    location.href = 'dashboard.html';
+                }
+            } else {
+                location.href = 'dashboard.html';
+            }
         }
-        function updatePreviewSkills(value) {
-            const container = document.getElementById('preview-skills');
+
+        function saveAndExit() {
+            alert('保存しました！');
+            isDirty = false; 
+        }
+
+        function updatePreview(id, value) {
+            const el = document.getElementById('preview-' + id);
+            if(el) el.innerText = value || "...";
+            markAsDirty();
+        }
+
+        function renderSkills() {
+            const container = document.getElementById('selected-skills-container');
+            const previewContainer = document.getElementById('preview-skills');
             container.innerHTML = '';
-            const skills = value.split(/,|、/).map(s => s.trim()).filter(s => s);
-            skills.forEach(skill => {
-                const span = document.createElement('span');
-                span.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-primary-50 text-primary-700 border border-primary-100';
-                span.innerText = skill;
-                container.appendChild(span);
+            previewContainer.innerHTML = '';
+
+            mySkills.forEach((skill, index) => {
+                const tag = document.createElement('span');
+                tag.className = 'px-3 py-1 rounded bg-primary-50 text-primary-700 font-bold text-sm border border-primary-100 flex items-center gap-2';
+                tag.innerHTML = `${skill} <button onclick="removeSkill(${index})" class="text-primary-400 hover:text-primary-600">×</button>`;
+                container.appendChild(tag);
+
+                const pTag = document.createElement('span');
+                pTag.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-primary-50 text-primary-700 border border-primary-100';
+                pTag.innerText = skill;
+                previewContainer.appendChild(pTag);
             });
         }
-        // 初期反映
-        updatePreview('name', '山田 太郎');
-        updatePreview('dept', '開発部');
-        updatePreview('role', '2020年入社');
-        updatePreview('comment', '新しい技術に挑戦中です！');
-        updatePreviewSkills('Python, JavaScript, デザイン');
+        function addSkill(skill) {
+            if (skill && !mySkills.includes(skill)) {
+                mySkills.push(skill);
+                renderSkills();
+                markAsDirty();
+            }
+        }
+        function removeSkill(index) {
+            mySkills.splice(index, 1);
+            renderSkills();
+            markAsDirty();
+        }
+
+        function renderCerts() {
+            const container = document.getElementById('selected-certs-container');
+            const previewContainer = document.getElementById('preview-certs');
+            const previewWrapper = document.getElementById('preview-certs-container');
+            
+            container.innerHTML = '';
+            previewContainer.innerHTML = '';
+
+            if(myCerts.length > 0) {
+                previewWrapper.classList.remove('hidden');
+            } else {
+                previewWrapper.classList.add('hidden');
+            }
+
+            myCerts.forEach((cert, index) => {
+                const tag = document.createElement('span');
+                tag.className = 'px-3 py-1 rounded bg-accent-50 text-secondary-700 font-bold text-sm border border-accent-200 flex items-center gap-2';
+                tag.innerHTML = `★ ${cert} <button onclick="removeCert(${index})" class="text-secondary-400 hover:text-red-500">×</button>`;
+                container.appendChild(tag);
+
+                const pTag = document.createElement('span');
+                pTag.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-accent-100 text-secondary-800 border border-accent-200';
+                pTag.innerText = `★ ${cert}`;
+                previewContainer.appendChild(pTag);
+            });
+        }
+        function addCert(cert) {
+            if (cert && !myCerts.includes(cert)) {
+                myCerts.push(cert);
+                renderCerts();
+                markAsDirty();
+            }
+        }
+        function removeCert(index) {
+            myCerts.splice(index, 1);
+            renderCerts();
+            markAsDirty();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('edit-form');
+            form.addEventListener('input', markAsDirty);
+            form.addEventListener('change', markAsDirty);
+
+            // 部署リスト
+            const depts = [...new Set(users.map(u => u.dept))];
+            const deptSelect = document.getElementById('input-dept');
+            depts.forEach(d => {
+                const opt = new Option(d, d);
+                if (d === "BI事業部") opt.selected = true; 
+                deptSelect.add(opt);
+            });
+            updatePreview('dept', deptSelect.value);
+
+            // 入社年度
+            const yearSelect = document.getElementById('input-year');
+            const currentYear = new Date().getFullYear();
+            for (let y = currentYear; y >= 2000; y--) {
+                const val = `${y}年`;
+                const opt = new Option(val, val);
+                if (y === 2020) opt.selected = true; 
+                yearSelect.add(opt);
+            }
+            updatePreview('role', yearSelect.value + '入社');
+
+            // --- スキル検索機能 ---
+            const allSkills = [...new Set(users.flatMap(u => u.skills))].sort((a, b) => a.localeCompare(b, 'ja'));
+            const skillInput = document.getElementById('skill-search');
+            const skillResults = document.getElementById('skill-results');
+
+            function updateSkillList(filterText) {
+                skillResults.innerHTML = '';
+                const val = filterText ? filterText.toLowerCase() : '';
+                
+                let matches = val ? allSkills.filter(s => s.toLowerCase().includes(val)) : allSkills;
+
+                if (matches.length > 0) {
+                    skillResults.classList.remove('hidden');
+                    matches.forEach(match => {
+                        const li = document.createElement('li');
+                        li.className = "px-3 py-2 hover:bg-secondary-50 cursor-pointer text-sm font-bold text-secondary-700 border-b border-gray-100 last:border-0";
+                        li.innerText = match;
+                        li.onmousedown = (e) => { 
+                             e.preventDefault(); 
+                             addSkill(match);
+                             skillInput.value = '';
+                             skillResults.classList.add('hidden');
+                        };
+                        skillResults.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.className = "px-3 py-2 text-sm text-gray-400";
+                    li.innerText = "見つかりません";
+                    skillResults.appendChild(li);
+                    skillResults.classList.remove('hidden');
+                }
+            }
+            skillInput.addEventListener('input', (e) => updateSkillList(e.target.value));
+            skillInput.addEventListener('focus', (e) => updateSkillList(e.target.value));
+            skillInput.addEventListener('blur', () => setTimeout(() => skillResults.classList.add('hidden'), 200));
+
+            // --- 資格検索機能 ---
+            const certInput = document.getElementById('cert-search');
+            const certResults = document.getElementById('cert-results');
+
+            function updateCertList(filterText) {
+                certResults.innerHTML = '';
+                const val = filterText ? filterText.toLowerCase() : '';
+                
+                let matches = val ? officialCerts.filter(c => c.toLowerCase().includes(val)) : officialCerts;
+
+                if (matches.length > 0) {
+                    certResults.classList.remove('hidden');
+                    matches.forEach(match => {
+                        const li = document.createElement('li');
+                        li.className = "px-3 py-2 hover:bg-secondary-50 cursor-pointer text-sm font-bold text-secondary-700 border-b border-gray-100 last:border-0";
+                        li.innerText = match;
+                        li.onmousedown = (e) => { 
+                             e.preventDefault(); 
+                             addCert(match);
+                             certInput.value = '';
+                             certResults.classList.add('hidden');
+                        };
+                        certResults.appendChild(li);
+                    });
+                } else {
+                    const li = document.createElement('li');
+                    li.className = "px-3 py-2 text-sm text-gray-400";
+                    li.innerText = "該当なし";
+                    certResults.appendChild(li);
+                    certResults.classList.remove('hidden');
+                }
+            }
+            certInput.addEventListener('input', (e) => updateCertList(e.target.value));
+            certInput.addEventListener('focus', (e) => updateCertList(e.target.value));
+            certInput.addEventListener('blur', () => setTimeout(() => certResults.classList.add('hidden'), 200));
+
+            updatePreview('q1', "ユーザー視点での開発を心がけています。");
+            updatePreview('q2', "週末のキャンプと焚き火動画を見ること。");
+            updatePreview('q3', "学生時代は美術部で油絵を描いていました。");
+            renderSkills();
+            renderCerts();
+            isDirty = false; 
+        });
     </script>
 </body>
 </html>

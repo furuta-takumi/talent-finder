@@ -19,39 +19,14 @@
         .notebook-page {
             transform-origin: left center;
             backface-visibility: hidden;
-            /* transitionはJSで制御するためここでは指定しない方が無難だが、滑らかさのために残す */
             transition: transform 0.3s ease-in, opacity 0.3s ease-in;
         }
-        
-        /* 次へ：古いページが出ていく */
-        .page-turn-next-out {
-            transform: rotateY(-90deg);
-            opacity: 0.5;
-        }
-        /* 次へ：新しいページが入ってくる */
-        .page-turn-next-in {
-            animation: flipInRight 0.4s ease-out forwards;
-        }
-
-        /* 前へ：古いページが出ていく（逆回転） */
-        .page-turn-prev-out {
-            transform-origin: right center;
-            transform: rotateY(90deg);
-            opacity: 0.5;
-        }
-        /* 前へ：新しいページが入ってくる */
-        .page-turn-prev-in {
-            animation: flipInLeft 0.4s ease-out forwards;
-        }
-
-        @keyframes flipInRight {
-            from { transform: rotateY(90deg); opacity: 0; }
-            to { transform: rotateY(0); opacity: 1; }
-        }
-        @keyframes flipInLeft {
-            from { transform: rotateY(-90deg); opacity: 0; }
-            to { transform: rotateY(0); opacity: 1; }
-        }
+        .page-turn-next-out { transform: rotateY(-90deg); opacity: 0.5; }
+        .page-turn-next-in { animation: flipInRight 0.4s ease-out forwards; }
+        .page-turn-prev-out { transform-origin: right center; transform: rotateY(90deg); opacity: 0.5; }
+        .page-turn-prev-in { animation: flipInLeft 0.4s ease-out forwards; }
+        @keyframes flipInRight { from { transform: rotateY(90deg); opacity: 0; } to { transform: rotateY(0); opacity: 1; } }
+        @keyframes flipInLeft { from { transform: rotateY(-90deg); opacity: 0; } to { transform: rotateY(0); opacity: 1; } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -101,11 +76,6 @@
                             ページ削除
                         </button>
                     </div>
-
-                    <div class="absolute left-[-12px] top-4 w-4 h-4 rounded-full bg-secondary-200 border border-secondary-400"></div>
-                    <div class="absolute left-[-12px] top-10 w-4 h-4 rounded-full bg-secondary-200 border border-secondary-400"></div>
-                    <div class="absolute left-[-12px] top-16 w-4 h-4 rounded-full bg-secondary-200 border border-secondary-400"></div>
-                    <div class="absolute left-[-12px] top-22 w-4 h-4 rounded-full bg-secondary-200 border border-secondary-400"></div>
                 </div>
             </div>
         </aside>
@@ -120,15 +90,11 @@
                     </div>
                     
                     <div class="space-y-4">
-                        <div class="flex justify-center gap-4 text-xs font-bold text-secondary-600 mb-2">
-                            <label class="flex items-center gap-1 cursor-pointer hover:text-primary-600">
-                                <input type="radio" name="search-mode" value="normal" checked class="accent-primary-600">
-                                通常検索
-                            </label>
-                            <label class="flex items-center gap-1 cursor-pointer hover:text-primary-600">
-                                <input type="radio" name="search-mode" value="fuzzy" class="accent-primary-600">
-                                あいまい(AI風)
-                            </label>
+                        <div class="bg-secondary-200 p-1 rounded-lg flex relative">
+                            <input type="radio" id="mode-normal" name="search-mode" value="normal" checked class="peer/normal hidden">
+                            <input type="radio" id="mode-fuzzy" name="search-mode" value="fuzzy" class="peer/fuzzy hidden">
+                            <label for="mode-normal" class="flex-1 text-center py-2 text-xs font-bold rounded-md cursor-pointer transition-all duration-200 peer-checked/normal:bg-white peer-checked/normal:text-primary-600 peer-checked/normal:shadow-sm text-secondary-500 hover:text-secondary-700">🔍 キーワード検索</label>
+                            <label for="mode-fuzzy" class="flex-1 text-center py-2 text-xs font-bold rounded-md cursor-pointer transition-all duration-200 peer-checked/fuzzy:bg-white peer-checked/fuzzy:text-primary-600 peer-checked/fuzzy:shadow-sm text-secondary-500 hover:text-secondary-700">🤖 AI風検索</label>
                         </div>
 
                         <div class="relative">
@@ -138,28 +104,82 @@
                         </div>
 
                         <div class="space-y-4 pt-2">
-                            <div>
-                                <label class="text-xs font-bold text-secondary-500 block mb-1">部署を選ぶ</label>
-                                <select id="filter-dept" class="w-full bg-transparent border-2 border-dashed border-secondary-300 rounded px-2 py-2 text-sm cursor-pointer hover:bg-white transition"><option value="">全ての部署</option></select>
+                            <div class="relative">
+                                <label class="text-xs font-bold text-secondary-500 block mb-1">部署を選ぶ (複数可)</label>
+                                <div id="tags-dept" class="flex flex-wrap gap-1 mb-1"></div>
+                                <input type="text" id="filter-dept-input" placeholder="クリックして選択..." 
+                                    class="w-full bg-transparent border-2 border-dashed border-secondary-300 rounded px-2 py-2 text-sm cursor-pointer hover:bg-white transition truncate focus:outline-none"
+                                    onfocus="openList('dept')" onclick="openList('dept')" oninput="filterList('dept', this.value)">
+                                <button onclick="clearTags('dept')" class="absolute right-8 top-8 text-gray-400 hover:text-gray-600 hidden" id="clear-dept">×</button>
+                                <div class="absolute right-2 top-9 text-[10px] pointer-events-none">▼</div>
+                                <ul id="list-dept" class="hidden absolute z-20 w-full bg-white border border-secondary-300 rounded shadow-lg max-h-60 overflow-y-auto mt-1"></ul>
                             </div>
-                            <div>
-                                <label class="text-xs font-bold text-secondary-500 block mb-1">入社年</label>
-                                <select id="filter-year" class="w-full bg-transparent border-2 border-dashed border-secondary-300 rounded px-2 py-2 text-sm cursor-pointer hover:bg-white transition"><option value="">全ての年度</option></select>
+                            
+                            <div class="relative">
+                                <label class="text-xs font-bold text-secondary-500 block mb-1">入社年 (複数可)</label>
+                                <div id="tags-year" class="flex flex-wrap gap-1 mb-1"></div>
+                                <input type="text" id="filter-year-input" placeholder="クリックして選択..." 
+                                    class="w-full bg-transparent border-2 border-dashed border-secondary-300 rounded px-2 py-2 text-sm cursor-pointer hover:bg-white transition truncate focus:outline-none"
+                                    onfocus="openList('year')" onclick="openList('year')" oninput="filterList('year', this.value)">
+                                <button onclick="clearTags('year')" class="absolute right-8 top-8 text-gray-400 hover:text-gray-600 hidden" id="clear-year">×</button>
+                                <div class="absolute right-2 top-9 text-[10px] pointer-events-none">▼</div>
+                                <ul id="list-year" class="hidden absolute z-20 w-full bg-white border border-secondary-300 rounded shadow-lg max-h-60 overflow-y-auto mt-1"></ul>
                             </div>
                         </div>
 
                         <div class="pt-4 border-t-2 border-secondary-200 border-dotted space-y-4">
-                            <div>
-                                <label class="text-xs font-bold text-primary-600 block mb-1">スキル</label>
-                                <select id="filter-skill" class="w-full bg-primary-50 border border-primary-200 rounded px-2 py-2 text-sm cursor-pointer"><option value="">指定なし</option></select>
+                            <div class="relative">
+                                <div class="flex justify-between items-end mb-1">
+                                    <label class="text-xs font-bold text-primary-600 block">スキル (複数可)</label>
+                                    <div class="flex items-center gap-1 bg-primary-100 p-0.5 rounded">
+                                        <label class="cursor-pointer">
+                                            <input type="radio" name="logic-skill" value="or" checked class="peer sr-only" onchange="filterUsers()">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold text-primary-400 peer-checked:bg-white peer-checked:text-primary-600 peer-checked:shadow-sm transition-all">OR</span>
+                                        </label>
+                                        <label class="cursor-pointer">
+                                            <input type="radio" name="logic-skill" value="and" class="peer sr-only" onchange="filterUsers()">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold text-primary-400 peer-checked:bg-white peer-checked:text-primary-600 peer-checked:shadow-sm transition-all">AND</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div id="tags-skill" class="flex flex-wrap gap-1 mb-1"></div>
+                                <input type="text" id="filter-skill-input" placeholder="クリックして検索..." 
+                                    class="w-full bg-primary-50 border border-primary-200 rounded px-2 py-2 text-sm cursor-pointer hover:bg-white transition truncate focus:outline-none"
+                                    onfocus="openList('skill')" onclick="openList('skill')" oninput="filterList('skill', this.value)">
+                                <button onclick="clearTags('skill')" class="absolute right-2 top-8 text-primary-400 hover:text-primary-600 hidden" id="clear-skill">×</button>
+                                <ul id="list-skill" class="hidden absolute z-20 w-full bg-white border border-primary-200 rounded shadow-lg max-h-60 overflow-y-auto mt-1"></ul>
                             </div>
-                            <div>
-                                <label class="text-xs font-bold text-accent-600 block mb-1">資格</label>
-                                <select id="filter-cert" class="w-full bg-accent-50 border border-accent-200 rounded px-2 py-2 text-sm cursor-pointer"><option value="">指定なし</option></select>
+
+                            <div class="relative">
+                                <div class="flex justify-between items-end mb-1">
+                                    <label class="text-xs font-bold text-accent-600 block">資格 (複数可)</label>
+                                    <div class="flex items-center gap-1 bg-accent-100 p-0.5 rounded">
+                                        <label class="cursor-pointer">
+                                            <input type="radio" name="logic-cert" value="or" checked class="peer sr-only" onchange="filterUsers()">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold text-accent-400 peer-checked:bg-white peer-checked:text-accent-600 peer-checked:shadow-sm transition-all">OR</span>
+                                        </label>
+                                        <label class="cursor-pointer">
+                                            <input type="radio" name="logic-cert" value="and" class="peer sr-only" onchange="filterUsers()">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold text-accent-400 peer-checked:bg-white peer-checked:text-accent-600 peer-checked:shadow-sm transition-all">AND</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div id="tags-cert" class="flex flex-wrap gap-1 mb-1"></div>
+                                <input type="text" id="filter-cert-input" placeholder="クリックして検索..." 
+                                    class="w-full bg-accent-50 border border-accent-200 rounded px-2 py-2 text-sm cursor-pointer hover:bg-white transition truncate focus:outline-none"
+                                    onfocus="openList('cert')" onclick="openList('cert')" oninput="filterList('cert', this.value)">
+                                <button onclick="clearTags('cert')" class="absolute right-2 top-8 text-accent-400 hover:text-accent-600 hidden" id="clear-cert">×</button>
+                                <ul id="list-cert" class="hidden absolute z-20 w-full bg-white border border-accent-200 rounded shadow-lg max-h-60 overflow-y-auto mt-1"></ul>
                             </div>
-                            <div>
-                                <label class="text-xs font-bold text-success-600 block mb-1">趣味</label>
-                                <select id="filter-hobby" class="w-full bg-success-50 border border-success-200 rounded px-2 py-2 text-sm cursor-pointer"><option value="">指定なし</option></select>
+
+                            <div class="relative">
+                                <label class="text-xs font-bold text-success-600 block mb-1">趣味 (複数可)</label>
+                                <div id="tags-hobby" class="flex flex-wrap gap-1 mb-1"></div>
+                                <input type="text" id="filter-hobby-input" placeholder="クリックして検索..." 
+                                    class="w-full bg-success-50 border border-success-200 rounded px-2 py-2 text-sm cursor-pointer hover:bg-white transition truncate focus:outline-none"
+                                    onfocus="openList('hobby')" onclick="openList('hobby')" oninput="filterList('hobby', this.value)">
+                                <button onclick="clearTags('hobby')" class="absolute right-2 top-8 text-success-400 hover:text-success-600 hidden" id="clear-hobby">×</button>
+                                <ul id="list-hobby" class="hidden absolute z-20 w-full bg-white border border-success-200 rounded shadow-lg max-h-60 overflow-y-auto mt-1"></ul>
                             </div>
                         </div>
 
@@ -168,15 +188,6 @@
                             <p class="text-xl font-bold text-primary-600 mt-2 font-mono"><span id="count-display">0</span> <span class="text-sm text-secondary-400">枚</span></p>
                         </div>
                     </div>
-                </div>
-                
-                <div class="lg:hidden mt-8 bg-white p-5 rounded-sm shadow-floating transform rotate-1 border-l-8 border-secondary-400 relative">
-                     <h3 class="font-bold text-secondary-700 border-b border-dashed border-secondary-300 pb-2 mb-2 flex items-center gap-2">
-                        <span>📝</span> 自由帳
-                    </h3>
-                    <textarea id="global-memo-area-mobile" 
-                        class="w-full h-32 bg-transparent text-sm text-secondary-700 outline-none resize-none"
-                        placeholder="メモ..."></textarea>
                 </div>
             </div>
         </aside>
@@ -200,137 +211,83 @@
         const noResultMsg = document.getElementById('no-result');
         const dailyPickupContainer = document.getElementById('daily-pickup-container');
         const fuzzyHint = document.getElementById('fuzzy-hint');
-        
         const inputSearch = document.getElementById('search-input');
         const searchModeRadios = document.getElementsByName('search-mode');
-        const selectDept = document.getElementById('filter-dept');
-        const selectYear = document.getElementById('filter-year');
-        const selectSkill = document.getElementById('filter-skill');
-        const selectCert = document.getElementById('filter-cert');
-        const selectHobby = document.getElementById('filter-hobby');
 
-        // --- ★★★ 自由帳（ページめくり機能付き・修正版） ★★★ ---
+        // --- 共通リスト管理データ ---
+        const filterData = {
+            dept: [], year: [], skill: [], cert: [], hobby: []
+        };
+        // 複数選択された値を配列で保持
+        const selectedValues = {
+            dept: [], year: [], skill: [], cert: [], hobby: []
+        };
+
+        // --- 自由帳ロジック ---
         const memoArea = document.getElementById('global-memo-area');
         const pageIndicator = document.getElementById('page-indicator');
-        const memoAreaMobile = document.getElementById('global-memo-area-mobile');
-
-        // データ初期化
         let notebookData = JSON.parse(localStorage.getItem('tf_notebook_data'));
         if (!notebookData) {
             const oldData = localStorage.getItem('tf_global_memo');
             notebookData = oldData ? [oldData] : [""];
         }
         let currentPageIndex = 0;
-        let isAnimating = false; // 連打防止用
+        let isAnimating = false;
 
         function updateNotebookUI() {
-            // UIを更新するだけで、クラスは操作しない（アニメーションの邪魔をしない）
-            if(memoArea) {
-                memoArea.value = notebookData[currentPageIndex];
-            }
-            if(pageIndicator) {
-                pageIndicator.innerText = `${currentPageIndex + 1} / ${notebookData.length}`;
-            }
-            if(memoAreaMobile) memoAreaMobile.value = notebookData[currentPageIndex];
-            
-            // 保存
+            if(memoArea) memoArea.value = notebookData[currentPageIndex];
+            if(pageIndicator) pageIndicator.innerText = `${currentPageIndex + 1} / ${notebookData.length}`;
             localStorage.setItem('tf_notebook_data', JSON.stringify(notebookData));
         }
-
-        // 入力時の保存
         if(memoArea) {
             memoArea.addEventListener('input', (e) => {
                 notebookData[currentPageIndex] = e.target.value;
                 localStorage.setItem('tf_notebook_data', JSON.stringify(notebookData));
-                if(memoAreaMobile) memoAreaMobile.value = e.target.value;
             });
         }
-        if(memoAreaMobile) {
-            memoAreaMobile.addEventListener('input', (e) => {
-                notebookData[currentPageIndex] = e.target.value;
-                localStorage.setItem('tf_notebook_data', JSON.stringify(notebookData));
-                if(memoArea) memoArea.value = e.target.value;
-            });
-        }
-
-        // ページ切り替え（アニメーションのタイミングを厳密に管理）
         function changePage(direction) {
             if (!memoArea || isAnimating) return;
-            
-            // 前のページがない場合は何もしない
             if (direction === 'prev' && currentPageIndex <= 0) return;
-
             isAnimating = true;
-
-            // 1. 出ていくアニメーション
             const outClass = direction === 'next' ? 'page-turn-next-out' : 'page-turn-prev-out';
             const inClass = direction === 'next' ? 'page-turn-next-in' : 'page-turn-prev-in';
-
             memoArea.classList.add(outClass);
-
-            // 2. 0.3秒後：紙が倒れきったら、中身を差し替えてクラス削除
             setTimeout(() => {
                 memoArea.classList.remove(outClass);
-
-                // ページ移動処理
                 if (direction === 'next') {
-                    if (currentPageIndex === notebookData.length - 1) {
-                        notebookData.push(""); // 最後のページなら新規作成
-                    }
+                    if (currentPageIndex === notebookData.length - 1) notebookData.push("");
                     currentPageIndex++;
                 } else {
                     currentPageIndex--;
                 }
-                
-                // 画面更新
                 updateNotebookUI();
-
-                // 3. 入ってくるアニメーション開始
                 memoArea.classList.add(inClass);
-
-                // 4. 0.4秒後：アニメーション完了後にクラスをお掃除
                 setTimeout(() => {
                     memoArea.classList.remove(inClass);
-                    isAnimating = false; // ロック解除
+                    isAnimating = false;
                 }, 400);
-
             }, 300);
         }
-
-        // ページ削除
         function deleteCurrentPage() {
-            if (notebookData.length <= 1) {
-                notebookData[0] = ""; 
-            } else {
+            if (notebookData.length <= 1) { notebookData[0] = ""; } else {
                 notebookData.splice(currentPageIndex, 1);
-                if (currentPageIndex >= notebookData.length) {
-                    currentPageIndex = notebookData.length - 1; 
-                }
+                if (currentPageIndex >= notebookData.length) currentPageIndex = notebookData.length - 1; 
             }
             updateNotebookUI();
-            // 削除時はアニメーションなしで即更新
             alert('ページを削除しました🗑️');
         }
-
-        // 初期表示
         updateNotebookUI();
 
-
-        // ★★★ コピー機能 ★★★
+        // --- コピー機能 ---
         function copyName(text, btnElement) {
             navigator.clipboard.writeText(text).then(() => {
                 const originalContent = btnElement.innerHTML;
                 btnElement.innerHTML = '<span class="text-success-600 font-bold">✅</span>';
-                setTimeout(() => {
-                    btnElement.innerHTML = originalContent;
-                }, 1500);
-            }).catch(err => {
-                console.error('Copy failed', err);
-                alert('コピーできませんでした');
+                setTimeout(() => { btnElement.innerHTML = originalContent; }, 1500);
             });
         }
 
-        // モード切替
+        // --- 検索モード切替 ---
         searchModeRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
                 if(e.target.value === 'fuzzy') {
@@ -344,15 +301,13 @@
             });
         });
 
+        // --- タグクリック検索 ---
         function searchByTag(type, value) {
             resetFilter(false);
-            if (type === 'skill') selectSkill.value = value;
-            if (type === 'cert') selectCert.value = value;
-            if (type === 'hobby') selectHobby.value = value;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            filterUsers();
+            addTag(type, value);
         }
 
+        // --- Daily Pickup ---
         function initDailyPickup() {
             const today = new Date().toISOString().split('T')[0];
             let savedData = JSON.parse(localStorage.getItem('tf_daily_pickup'));
@@ -365,7 +320,6 @@
                 localStorage.setItem('tf_daily_pickup', JSON.stringify({ date: today, userId: pickupUser.id }));
             }
             if (!pickupUser) return;
-
             const html = `
                 <div class="relative bg-white p-4 pb-12 shadow-floating transform rotate-1 max-w-xl w-full">
                     <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 w-32 h-8 bg-primary-100/50 rotate-1 tape"></div>
@@ -395,23 +349,159 @@
             dailyPickupContainer.classList.remove('hidden');
         }
 
+        // --- フィルター初期化 ---
         function initFilters() {
-            const depts = [...new Set(users.map(u => u.dept))];
-            depts.forEach(d => selectDept.add(new Option(d, d)));
-            const years = [...new Set(users.map(u => { const match = u.role.match(/[0-9]{4}/); return match ? match[0] : null; }))].filter(y => y).sort().reverse();
-            years.forEach(y => selectYear.add(new Option(y + "年", y)));
-            let allSkills = []; users.forEach(u => allSkills = allSkills.concat(u.skills));
-            [...new Set(allSkills)].sort().forEach(s => selectSkill.add(new Option(s, s)));
-            let allCerts = []; users.forEach(u => allCerts = allCerts.concat(u.certs));
-            [...new Set(allCerts)].sort().forEach(c => selectCert.add(new Option(c, c)));
-            let allHobbies = []; users.forEach(u => allHobbies = allHobbies.concat(u.hobbies));
-            [...new Set(allHobbies)].sort().forEach(h => selectHobby.add(new Option(h, h)));
+            filterData.dept = [...new Set(users.map(u => u.dept))];
+            
+            let years = [...new Set(users.map(u => { const match = u.role.match(/[0-9]{4}/); return match ? match[0] : null; }))].filter(y => y);
+            const currentYear = new Date().getFullYear();
+            const maxYear = years.length > 0 ? Math.max(...years.map(y => parseInt(y))) : currentYear;
+            for (let y = maxYear + 1; y <= currentYear; y++) years.push(String(y));
+            filterData.year = years.sort().reverse().map(y => y + "年");
 
+            filterData.skill = [...new Set(users.flatMap(u => u.skills))].sort((a,b)=>a.localeCompare(b,'ja'));
+            
+            if(typeof officialCerts !== 'undefined'){
+                filterData.cert = officialCerts.sort((a,b)=>a.localeCompare(b,'ja'));
+            } else {
+                filterData.cert = [...new Set(users.flatMap(u => u.certs))].sort((a,b)=>a.localeCompare(b,'ja'));
+            }
+            filterData.hobby = [...new Set(users.flatMap(u => u.hobbies))].sort((a,b)=>a.localeCompare(b,'ja'));
+
+            // URLパラメータ反映
             const params = new URLSearchParams(window.location.search);
-            if (params.get('skill')) selectSkill.value = params.get('skill');
-            if (params.get('cert')) selectCert.value = params.get('cert');
-            if (params.get('hobby')) selectHobby.value = params.get('hobby');
+            if (params.get('skill')) addTag('skill', params.get('skill'));
+            if (params.get('cert')) addTag('cert', params.get('cert'));
+            if (params.get('hobby')) addTag('hobby', params.get('hobby'));
         }
+
+        // --- 複数選択ロジック ---
+
+        function addTag(type, value) {
+            if (!value) return;
+            if (selectedValues[type].includes(value)) return;
+            
+            selectedValues[type].push(value);
+            renderTags(type);
+            
+            document.getElementById(`filter-${type}-input`).value = '';
+            // あえて閉じない（連続選択しやすくするなら閉じない方が便利だが、今回は閉じる挙動は画面外クリックのみにする）
+            // openList(type) を呼んでリストを更新（選択済みを除外するなど）しても良いが、ここではシンプルに入力をクリアするだけ
+            document.getElementById(`filter-${type}-input`).focus();
+            
+            filterUsers();
+        }
+
+        function removeTag(type, value) {
+            selectedValues[type] = selectedValues[type].filter(v => v !== value);
+            renderTags(type);
+            filterUsers();
+        }
+
+        function clearTags(type) {
+            selectedValues[type] = [];
+            renderTags(type);
+            document.getElementById(`filter-${type}-input`).value = '';
+            filterUsers();
+        }
+
+        function renderTags(type) {
+            const container = document.getElementById(`tags-${type}`);
+            const clearBtn = document.getElementById(`clear-${type}`);
+            container.innerHTML = '';
+
+            if (selectedValues[type].length > 0) {
+                clearBtn.classList.remove('hidden');
+                selectedValues[type].forEach(val => {
+                    const tag = document.createElement('span');
+                    let bgClass = "bg-gray-100 text-gray-700";
+                    if(type === 'skill') bgClass = "bg-primary-50 text-primary-700 border border-primary-100";
+                    if(type === 'cert') bgClass = "bg-accent-50 text-accent-700 border border-accent-100";
+                    if(type === 'hobby') bgClass = "bg-success-50 text-success-700 border border-success-100";
+                    if(type === 'dept') bgClass = "bg-secondary-100 text-secondary-800 border border-secondary-200";
+
+                    tag.className = `inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${bgClass}`;
+                    tag.innerHTML = `${val} <button onclick="removeTag('${type}', '${val}')" class="hover:text-red-500 font-bold ml-1">×</button>`;
+                    container.appendChild(tag);
+                });
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+        }
+
+        // リストを強制的に開く（トグルではない）
+        function openList(type) {
+            const list = document.getElementById(`list-${type}`);
+            const input = document.getElementById(`filter-${type}-input`);
+            
+            // 他のリストを閉じる
+            ['dept','year','skill','cert','hobby'].forEach(t => {
+                if(t !== type) document.getElementById(`list-${t}`).classList.add('hidden');
+            });
+
+            // 常に開く
+            renderListItems(type, input.value); 
+            list.classList.remove('hidden');
+        }
+
+        function renderListItems(type, filterText) {
+            const list = document.getElementById(`list-${type}`);
+            list.innerHTML = '';
+            const val = filterText ? filterText.toLowerCase() : '';
+            let matches = filterData[type];
+
+            if (val) {
+                if(type === 'year'){
+                    matches = matches.filter(item => item.includes(val));
+                } else {
+                    matches = matches.filter(item => item.toLowerCase().includes(val));
+                }
+            }
+            if (matches.length > 0) {
+                matches.forEach(item => {
+                    if (selectedValues[type].includes(item)) return;
+                    const li = document.createElement('li');
+                    li.className = "px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm font-medium text-gray-700 border-b border-gray-100 last:border-0";
+                    li.innerText = item;
+                    li.onmousedown = (e) => {
+                        e.preventDefault();
+                        addTag(type, item);
+                    };
+                    list.appendChild(li);
+                });
+            }
+            if (list.children.length === 0) {
+                const li = document.createElement('li');
+                li.className = "px-3 py-2 text-sm text-gray-400";
+                li.innerText = val ? "見つかりません" : "全て選択済み";
+                list.appendChild(li);
+            }
+        }
+
+        function filterList(type, text) {
+            renderListItems(type, text);
+        }
+
+        function resetFilter(shouldRender = true) {
+            inputSearch.value = '';
+            ['dept','year','skill','cert','hobby'].forEach(t => {
+                selectedValues[t] = [];
+                renderTags(t);
+                document.getElementById(`filter-${t}-input`).value = '';
+                if(t==='skill') document.querySelector('input[name="logic-skill"][value="or"]').checked = true;
+                if(t==='cert') document.querySelector('input[name="logic-cert"][value="or"]').checked = true;
+            });
+            if(shouldRender) filterUsers();
+        }
+
+        document.addEventListener('click', (e) => {
+            ['dept','year','skill','cert','hobby'].forEach(type => {
+                const wrap = document.getElementById(`filter-${type}-input`).parentElement;
+                if (!wrap.contains(e.target)) {
+                    document.getElementById(`list-${type}`).classList.add('hidden');
+                }
+            });
+        });
 
         function renderUsers(list) {
             listContainer.innerHTML = '';
@@ -422,14 +512,12 @@
             list.forEach((user, index) => {
                 const delay = index < 12 ? `style="animation-delay: ${index * 50}ms"` : '';
                 const rotate = (Math.random() * 2 - 1).toFixed(1); 
-                
                 const skillsHtml = user.skills.slice(0, 2).map(tag => 
                     `<span onclick="event.preventDefault(); event.stopPropagation(); searchByTag('skill', '${tag}')" 
                            class="clickable-tag px-2 py-0.5 rounded text-[10px] font-bold bg-primary-50 text-primary-700 border border-primary-100 hover:bg-primary-100 transition">
                        ${tag}
                      </span>`
                 ).join('');
-                
                 const certsHtml = user.certs.length > 0 
                     ? `<div onclick="event.preventDefault(); event.stopPropagation(); searchByTag('cert', '${user.certs[0]}')" 
                             class="clickable-tag mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-white bg-accent-400 px-2 py-0.5 shadow-sm transform -rotate-1 hover:rotate-0 transition">
@@ -440,7 +528,6 @@
                 const cardHtml = `
                     <div class="group bg-white p-5 shadow-paper hover:shadow-floating transition-all duration-300 flex flex-col h-full relative animate-fade-in" 
                          style="transform: rotate(${rotate}deg); animation-delay: ${index * 50}ms">
-                        
                         <div onclick="location.href='profile.html?id=${user.id}'" class="cursor-pointer">
                             <div class="pin-tack"></div>
                             <div class="flex items-start justify-between mb-3 pt-2">
@@ -465,7 +552,6 @@
                                 <p class="text-xs text-secondary-600 font-medium line-clamp-2">"${user.comment}"</p>
                             </div>
                         </div>
-
                         <div class="mt-2 flex justify-between items-center" onclick="location.href='profile.html?id=${user.id}'">
                             <span class="text-[10px] text-secondary-400 font-bold uppercase tracking-wider">${user.role}</span>
                             <span class="text-secondary-300 group-hover:text-primary-500 transition cursor-pointer">詳細へ 👉</span>
@@ -476,7 +562,6 @@
             });
         }
 
-        // ひらがな→カタカナ変換
         function hiraToKata(str) {
             return str.replace(/[\u3041-\u3096]/g, function(match) {
                 var chr = match.charCodeAt(0) + 0x60;
@@ -484,16 +569,20 @@
             });
         }
 
-        // 検索ロジック (完全版)
+        // 検索実行 (AND/ORロジック追加)
         function filterUsers() {
             let rawKeyword = inputSearch.value; 
             const mode = document.querySelector('input[name="search-mode"]:checked').value;
-            
-            const deptVal = selectDept.value;
-            const yearVal = selectYear.value;
-            const skillVal = selectSkill.value;
-            const certVal = selectCert.value;
-            const hobbyVal = selectHobby.value;
+
+            // スイッチの状態取得 (OR/AND)
+            const skillLogic = document.querySelector('input[name="logic-skill"]:checked') ? document.querySelector('input[name="logic-skill"]:checked').value : 'or';
+            const certLogic = document.querySelector('input[name="logic-cert"]:checked') ? document.querySelector('input[name="logic-cert"]:checked').value : 'or';
+
+            const deptVals = selectedValues.dept;
+            const yearVals = selectedValues.year.map(y => y.replace("年", ""));
+            const skillVals = selectedValues.skill;
+            const certVals = selectedValues.cert;
+            const hobbyVals = selectedValues.hobby;
 
             let targetJoinYear = null;
             let keywordForTextSearch = rawKeyword.toLowerCase();
@@ -510,7 +599,6 @@
                         keywordForTextSearch = keywordForTextSearch.replace(yearMatch[0], '').trim();
                     }
                 }
-
                 const inputWords = keywordForTextSearch.split(/\s+/).filter(w => w.length > 0);
                 if (inputWords.length > 0) {
                     inputWords.forEach(word => {
@@ -532,6 +620,7 @@
             
             const filtered = users.filter(user => {
                 const searchTarget = `${user.name} ${user.kana} ${user.hobbies.join(' ')} ${user.skills.join(' ')} ${user.certs.join(' ')} ${user.comment} ${user.role}`.toLowerCase();
+                
                 let matchKeyword = true;
                 if (mode === 'fuzzy') {
                     if (targetJoinYear && !user.role.includes(targetJoinYear)) matchKeyword = false;
@@ -542,25 +631,37 @@
                 } else {
                     matchKeyword = searchTarget.includes(rawKeyword.toLowerCase());
                 }
-                const matchDept = deptVal === "" || user.dept === deptVal;
-                const matchYear = yearVal === "" || user.role.includes(yearVal);
-                const matchSkill = skillVal === "" || user.skills.includes(skillVal);
-                const matchCert = certVal === "" || user.certs.includes(certVal);
-                const matchHobby = hobbyVal === "" || user.hobbies.includes(hobbyVal);
+
+                const matchDept = deptVals.length === 0 || deptVals.includes(user.dept);
+                const matchYear = yearVals.length === 0 || yearVals.some(y => user.role.includes(y));
+                
+                let matchSkill = true;
+                if(skillVals.length > 0) {
+                    if (skillLogic === 'and') {
+                        matchSkill = skillVals.every(s => user.skills.includes(s));
+                    } else {
+                        matchSkill = skillVals.some(s => user.skills.includes(s));
+                    }
+                }
+
+                let matchCert = true;
+                if(certVals.length > 0) {
+                    if (certLogic === 'and') {
+                        matchCert = certVals.every(c => user.certs.includes(c));
+                    } else {
+                        matchCert = certVals.some(c => user.certs.includes(c));
+                    }
+                }
+
+                const matchHobby = hobbyVals.length === 0 || hobbyVals.some(h => user.hobbies.includes(h));
+
                 return matchKeyword && matchDept && matchYear && matchSkill && matchCert && matchHobby;
             });
 
             renderUsers(filtered);
         }
 
-        function resetFilter(shouldRender = true) {
-            inputSearch.value = ''; selectDept.value = ''; selectYear.value = ''; 
-            selectSkill.value = ''; selectCert.value = ''; selectHobby.value = '';
-            if(shouldRender) filterUsers();
-        }
-
-        [inputSearch, selectDept, selectYear, selectSkill, selectCert, selectHobby].forEach(el => el.addEventListener(el.tagName==='INPUT'?'input':'change', filterUsers));
-
+        inputSearch.addEventListener('input', filterUsers);
         initFilters(); renderUsers(users); filterUsers(); initDailyPickup();
     </script>
 </body>
